@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#21120f" />
+  <title>Magh Month Prediction</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #fff7ed;
+      --muted: #e7cdb5;
+      --gold: #f5bb64;
+      --red: #ef8267;
+      --panel: rgba(37, 22, 19, .9);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 1.25rem;
+      color: var(--ink);
+      background: #21120f;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+
+    .bottle-background {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      width: 100%;
+      height: 100%;
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(166, 87, 42, .34), transparent 60%),
+        linear-gradient(135deg, #1d100e, #392016 58%, #1a100f);
+    }
+
+    .bottle-background svg {
+      width: 100%;
+      height: 100%;
+      opacity: .8;
+    }
+
+    .entry-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      padding: 1.25rem;
+      background: rgba(25, 13, 10, .36);
+    }
+
+    .entry-screen[hidden],
+    [hidden] { display: none !important; }
+
+    .entry-card {
+      width: min(100%, 520px);
+      padding: clamp(1.5rem, 7vw, 3rem);
+      border: 1px solid rgba(245, 187, 100, .6);
+      border-radius: 24px;
+      background: var(--panel);
+      box-shadow: 0 24px 70px rgba(0, 0, 0, .45);
+      text-align: center;
+      backdrop-filter: blur(7px);
+    }
+
+    .entry-card button {
+      min-width: 180px;
+      min-height: 58px;
+      margin-top: 1.25rem;
+      border-color: var(--gold);
+      background: rgba(245, 187, 100, .2);
+      font-size: 1.15rem;
+    }
+
+    .page {
+      width: min(100%, 620px);
+      text-align: center;
+    }
+
+    .eyebrow {
+      margin: 0 0 .45rem;
+      color: var(--gold);
+      font-size: .78rem;
+      font-weight: 800;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 8vw, 3.5rem);
+      line-height: 1.08;
+      text-wrap: balance;
+    }
+
+    .subtitle {
+      margin: .8rem 0 1.5rem;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .card {
+      padding: clamp(1.2rem, 5vw, 2rem);
+      border: 1px solid rgba(245, 187, 100, .48);
+      border-radius: 22px;
+      background: var(--panel);
+      box-shadow: 0 24px 70px rgba(0, 0, 0, .38);
+      backdrop-filter: blur(7px);
+    }
+
+    .card + .card { margin-top: 1rem; }
+
+    .question {
+      margin: 0 0 1.2rem;
+      font-size: clamp(1.2rem, 5vw, 1.65rem);
+      font-weight: 750;
+    }
+
+    .person-photo {
+      display: block;
+      width: min(100%, 190px);
+      max-height: 220px;
+      margin: 0 auto 1rem;
+      border: 2px solid rgba(245, 187, 100, .7);
+      border-radius: 16px;
+      object-fit: cover;
+      object-position: center 28%;
+    }
+
+    .choices {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: .75rem;
+    }
+
+    .choice input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .choice label {
+      display: block;
+      padding: .9rem 1rem;
+      border: 2px solid rgba(255, 247, 237, .25);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .06);
+      cursor: pointer;
+      font-size: 1.05rem;
+      font-weight: 800;
+      transition: transform .15s ease, border-color .15s ease, background .15s ease;
+    }
+
+    .choice label:hover { transform: translateY(-2px); }
+    .choice input:checked + label {
+      border-color: var(--gold);
+      background: rgba(245, 187, 100, .17);
+    }
+    .choice input:focus-visible + label {
+      outline: 3px solid white;
+      outline-offset: 3px;
+    }
+
+    .result {
+      margin-top: 1.2rem;
+      padding: 1.2rem .8rem .25rem;
+      border-top: 1px solid rgba(255, 247, 237, .16);
+    }
+
+    .result[hidden] { display: none; }
+
+    .reaction {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
+      min-height: 125px;
+      font-size: clamp(4rem, 19vw, 7rem);
+      line-height: 1;
+    }
+
+    .cat { animation: bounce .42s ease-in-out infinite alternate; }
+    .glass { align-self: center; font-size: .55em; transform: rotate(-12deg); }
+    .woman { animation: sway .65s ease-in-out infinite alternate; }
+
+    @keyframes bounce { to { transform: translateY(-9px) rotate(4deg); } }
+    @keyframes sway { to { transform: rotate(7deg) translateY(-3px); } }
+
+    .result h2 {
+      margin: .4rem 0;
+      color: var(--gold);
+      font-size: 1.35rem;
+    }
+
+    .result-no h2 { color: #ffaaa0; }
+    .result p { margin: .4rem auto; max-width: 430px; color: var(--muted); }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: .65rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+
+    button {
+      min-height: 42px;
+      padding: .6rem .9rem;
+      border: 1px solid rgba(255, 247, 237, .34);
+      border-radius: 999px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, .08);
+      font: inherit;
+      font-size: .9rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:hover { background: rgba(255, 255, 255, .15); }
+    button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+    .sound-status {
+      min-height: 1.3rem;
+      margin: .65rem 0 0;
+      color: var(--muted);
+      font-size: .8rem;
+    }
+
+    footer {
+      margin-top: 1.1rem;
+      color: rgba(255, 247, 237, .76);
+      font-size: .78rem;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bottle-background" aria-hidden="true">
+    <svg xmlns="http://www.w3.org/2000/svg" role="presentation">
+      <defs>
+        <g id="whiskyBottle" fill="#8d4e2d" fill-opacity=".26" stroke="#f3bf77" stroke-opacity=".5" stroke-width="2">
+          <path d="M28 8h24v22h10v35l15 20v91q0 13-13 13H16q-13 0-13-13V85l15-20V30h10z" />
+          <path d="M18 30h44M5 87h70" fill="none" />
+          <rect x="12" y="101" width="56" height="37" rx="4" fill="#d2954d" fill-opacity=".23" />
+          <text x="40" y="117" fill="#ffe2ad" fill-opacity=".72" stroke="none" font-family="sans-serif" font-size="7" text-anchor="middle">MALT</text>
+          <text x="40" y="128" fill="#ffe2ad" fill-opacity=".65" stroke="none" font-family="sans-serif" font-size="5" text-anchor="middle">WHISKY</text>
+        </g>
+        <pattern id="bottles" width="270" height="250" patternUnits="userSpaceOnUse">
+          <use href="#whiskyBottle" x="12" y="10" transform="rotate(-8 52 100)" />
+          <use href="#whiskyBottle" x="154" y="74" transform="scale(.68)" opacity=".65" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#bottles)" />
+    </svg>
+  </div>
+
+  <main class="entry-screen" id="entryScreen">
+    <section class="entry-card">
+        <p class="eyebrow">Welcome to the fun page</p>
+        <h1>Magh Month Prediction</h1>
+        <button type="button" id="enterButton">humai diya</button>
+    </section>
+  </main>
+
+  <main class="page" id="questionsPage" hidden>
+    <p class="eyebrow">A completely scientific prediction*</p>
+    <h1>Magh Month Prediction</h1>
+    <p class="subtitle">The cat has gathered the committee. Cast your vote.</p>
+
+    <section class="card" aria-labelledby="question">
+      <h2 class="question" id="question">mintur biya hobone magh mahot?</h2>
+      <div class="choices" role="radiogroup" aria-labelledby="question">
+        <div class="choice">
+          <input type="radio" id="answerYes" name="answer" value="yes" />
+          <label for="answerYes">YES 🍾</label>
+        </div>
+        <div class="choice">
+          <input type="radio" id="answerNo" name="answer" value="no" />
+          <label for="answerNo">NO 🤔</label>
+        </div>
+      </div>
+
+      <div class="result result-yes" id="yesResult" aria-live="polite" hidden>
+        <div class="reaction" aria-hidden="true"><span class="cat">😹</span><span class="glass">🥃</span></div>
+        <h2>YES! The cat approves!</h2>
+        <p>Magh mahot biya buli committee-e announce korise. Ha ha ha!</p>
+      </div>
+
+      <div class="result result-no" id="noResult" aria-live="polite" hidden>
+        <div class="reaction" aria-hidden="true"><span class="woman">👩‍🦰</span></div>
+        <h2>NO? What a dramatic plot twist!</h2>
+        <p>Here comes a theatrical, non-romantic sigh: “Aaaah, maybe next time!”</p>
+      </div>
+
+      <div class="controls">
+        <button type="button" id="soundToggle" aria-pressed="true">Sound: On</button>
+        <button type="button" id="askAgain" hidden>Ask again</button>
+      </div>
+      <p class="sound-status" id="soundStatus" aria-live="polite">Sound effects play after you choose an answer.</p>
+    </section>
+
+    <section class="card" aria-labelledby="questionTwo">
+      <h2 class="question" id="questionTwo">kune besi mod khai?</h2>
+      <img class="person-photo" src="assets/party-committee.webp" alt="Photo shared for this just-for-fun question" />
+      <div class="choices" role="radiogroup" aria-labelledby="questionTwo">
+        <div class="choice">
+          <input type="radio" id="answerTwoYes" name="answerTwo" value="yes" />
+          <label for="answerTwoYes">YES 🍾</label>
+        </div>
+        <div class="choice">
+          <input type="radio" id="answerTwoNo" name="answerTwo" value="no" />
+          <label for="answerTwoNo">NO 🤔</label>
+        </div>
+      </div>
+
+      <div class="result result-yes" id="yesSecondResult" aria-live="polite" hidden>
+        <h2>YES! The totally unscientific jury has voted.</h2>
+        <p>Vote received. The committee makes no real-life claims!</p>
+      </div>
+
+      <div class="result result-no" id="noSecondResult" aria-live="polite" hidden>
+        <h2>NO? The jury needs more evidence!</h2>
+        <p>Vote received. This is only a joke, not a real-life claim.</p>
+      </div>
+
+      <div class="controls">
+        <button type="button" id="askAgainTwo" hidden>Ask again</button>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="questionThree">
+      <h2 class="question" id="questionThree">beuty parlerr xoru pitek bapek hemen ne ?</h2>
+      <img class="person-photo" src="assets/third-question.jpg" alt="Photo added to the third question" />
+      <div class="choices" role="radiogroup" aria-labelledby="questionThree">
+        <div class="choice">
+          <input type="radio" id="answerThreeYes" name="answerThree" value="yes" />
+          <label for="answerThreeYes">YES 🍾</label>
+        </div>
+        <div class="choice">
+          <input type="radio" id="answerThreeNo" name="answerThree" value="no" />
+          <label for="answerThreeNo">NO 🤔</label>
+        </div>
+      </div>
+
+      <div class="result result-yes" id="yesThirdResult" aria-live="polite" hidden>
+        <h2>হয়! আপোনাৰ ভোট গ্ৰহণ কৰা হ'ল।</h2>
+        <p>The salon committee has noted your vote!</p>
+      </div>
+
+      <div class="result result-no" id="noThirdResult" aria-live="polite" hidden>
+        <h2>নহয়? আপোনাৰ ভোটো গ্ৰহণ কৰা হ'ল।</h2>
+        <p>The salon committee accepts your answer!</p>
+      </div>
+
+      <div class="controls">
+        <button type="button" id="askAgainThree" hidden>Ask again</button>
+      </div>
+    </section>
+
+    <footer>*For fun only. Poll answers make no real-life claims. The glass is a cartoon prop—please enjoy responsibly.</footer>
+  </main>
+
+  <audio id="partyLaugh" preload="auto" src="assets/cartoon-laugh.wav"></audio>
+
+  <script>
+    const entryScreen = document.getElementById("entryScreen");
+    const questionsPage = document.getElementById("questionsPage");
+    const yesInput = document.getElementById("answerYes");
+    const noInput = document.getElementById("answerNo");
+    const yesResult = document.getElementById("yesResult");
+    const noResult = document.getElementById("noResult");
+    const yesSecondInput = document.getElementById("answerTwoYes");
+    const noSecondInput = document.getElementById("answerTwoNo");
+    const yesSecondResult = document.getElementById("yesSecondResult");
+    const noSecondResult = document.getElementById("noSecondResult");
+    const yesThirdInput = document.getElementById("answerThreeYes");
+    const noThirdInput = document.getElementById("answerThreeNo");
+    const yesThirdResult = document.getElementById("yesThirdResult");
+    const noThirdResult = document.getElementById("noThirdResult");
+    const soundStatus = document.getElementById("soundStatus");
+    const soundToggle = document.getElementById("soundToggle");
+    const askAgain = document.getElementById("askAgain");
+    const askAgainTwo = document.getElementById("askAgainTwo");
+    const askAgainThree = document.getElementById("askAgainThree");
+    const partyLaugh = document.getElementById("partyLaugh");
+    let soundEnabled = true;
+
+    document.getElementById("enterButton").addEventListener("click", () => {
+      entryScreen.hidden = true;
+      questionsPage.hidden = false;
+      window.scrollTo(0, 0);
+    });
+
+    function playPartyLaugh() {
+      if (!soundEnabled) {
+        soundStatus.textContent = "Sound is off.";
+        return;
+      }
+
+      partyLaugh.play().then(() => {
+        soundStatus.textContent = "Playing the cartoon laugh.";
+      }).catch(() => {
+        playLaugh("The supplied laugh could not play; using a synthesized laugh.");
+      });
+    }
+
+    function playLaugh(statusText = "Playing a silly cartoon laugh.") {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!soundEnabled || !AudioContextClass) {
+        soundStatus.textContent = soundEnabled ? "Audio is not supported in this browser." : "Sound is off.";
+        return;
+      }
+
+      const context = new AudioContextClass();
+      const notes = [390, 510, 430, 560, 410, 520, 390];
+      notes.forEach((frequency, index) => {
+        const start = context.currentTime + index * 0.16;
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        oscillator.type = "triangle";
+        oscillator.frequency.setValueAtTime(frequency, start);
+        oscillator.frequency.exponentialRampToValueAtTime(frequency * .78, start + .11);
+        gain.gain.setValueAtTime(.0001, start);
+        gain.gain.exponentialRampToValueAtTime(.12, start + .018);
+        gain.gain.exponentialRampToValueAtTime(.0001, start + .13);
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+        oscillator.start(start);
+        oscillator.stop(start + .14);
+      });
+      soundStatus.textContent = statusText;
+      window.setTimeout(() => context.close(), 1500);
+    }
+
+    function playDramaticSigh() {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!soundEnabled || !AudioContextClass) {
+        soundStatus.textContent = soundEnabled ? "Audio is not supported in this browser." : "Sound is off.";
+        return;
+      }
+
+      const context = new AudioContextClass();
+      const length = Math.floor(context.sampleRate * 1.1);
+      const buffer = context.createBuffer(1, length, context.sampleRate);
+      const samples = buffer.getChannelData(0);
+      for (let index = 0; index < length; index++) samples[index] = Math.random() * 2 - 1;
+
+      const source = context.createBufferSource();
+      const filter = context.createBiquadFilter();
+      const gain = context.createGain();
+      source.buffer = buffer;
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(850, context.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(240, context.currentTime + 1.05);
+      gain.gain.setValueAtTime(.0001, context.currentTime);
+      gain.gain.linearRampToValueAtTime(.075, context.currentTime + .18);
+      gain.gain.exponentialRampToValueAtTime(.0001, context.currentTime + 1.08);
+      source.connect(filter);
+      filter.connect(gain);
+      gain.connect(context.destination);
+      source.start();
+      source.stop(context.currentTime + 1.1);
+      soundStatus.textContent = "Playing a dramatic cartoon sigh.";
+      window.setTimeout(() => context.close(), 1400);
+    }
+
+    function showAnswer(answer) {
+      const isYes = answer === "yes";
+      yesResult.hidden = !isYes;
+      noResult.hidden = isYes;
+      askAgain.hidden = false;
+      if (isYes) playLaugh();
+      else playDramaticSigh();
+    }
+
+    function showSecondAnswer(answer) {
+      const isYes = answer === "yes";
+      yesSecondResult.hidden = !isYes;
+      noSecondResult.hidden = isYes;
+      askAgainTwo.hidden = false;
+      if (isYes) playPartyLaugh();
+      else playDramaticSigh();
+    }
+
+    function showThirdAnswer(answer) {
+      const isYes = answer === "yes";
+      yesThirdResult.hidden = !isYes;
+      noThirdResult.hidden = isYes;
+      askAgainThree.hidden = false;
+      if (isYes) playPartyLaugh();
+      else playDramaticSigh();
+    }
+
+    yesInput.addEventListener("change", () => {
+      if (yesInput.checked) showAnswer("yes");
+    });
+    noInput.addEventListener("change", () => {
+      if (noInput.checked) showAnswer("no");
+    });
+    yesSecondInput.addEventListener("change", () => {
+      if (yesSecondInput.checked) showSecondAnswer("yes");
+    });
+    noSecondInput.addEventListener("change", () => {
+      if (noSecondInput.checked) showSecondAnswer("no");
+    });
+    yesThirdInput.addEventListener("change", () => {
+      if (yesThirdInput.checked) showThirdAnswer("yes");
+    });
+    noThirdInput.addEventListener("change", () => {
+      if (noThirdInput.checked) showThirdAnswer("no");
+    });
+
+    soundToggle.addEventListener("click", () => {
+      soundEnabled = !soundEnabled;
+      soundToggle.textContent = soundEnabled ? "Sound: On" : "Sound: Off";
+      soundToggle.setAttribute("aria-pressed", String(soundEnabled));
+      soundStatus.textContent = soundEnabled ? "Sound effects are on." : "Sound effects are muted.";
+    });
+
+    askAgain.addEventListener("click", () => {
+      yesInput.checked = false;
+      noInput.checked = false;
+      yesResult.hidden = true;
+      noResult.hidden = true;
+      askAgain.hidden = true;
+      soundStatus.textContent = "Sound effects play after you choose an answer.";
+      yesInput.focus();
+    });
+
+    askAgainTwo.addEventListener("click", () => {
+      yesSecondInput.checked = false;
+      noSecondInput.checked = false;
+      yesSecondResult.hidden = true;
+      noSecondResult.hidden = true;
+      askAgainTwo.hidden = true;
+      soundStatus.textContent = "Sound effects play after you choose an answer.";
+      yesSecondInput.focus();
+    });
+
+    askAgainThree.addEventListener("click", () => {
+      yesThirdInput.checked = false;
+      noThirdInput.checked = false;
+      yesThirdResult.hidden = true;
+      noThirdResult.hidden = true;
+      askAgainThree.hidden = true;
+      soundStatus.textContent = "Sound effects play after you choose an answer.";
+      yesThirdInput.focus();
+    });
+  </script>
+</body>
+</html>
